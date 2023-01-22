@@ -1,0 +1,7 @@
+---
+# handlers file for haproxy
+- name: "restart proxy"
+  service:
+    name: haproxy
+    state: restarted
+  when: syntax_check is succeeded

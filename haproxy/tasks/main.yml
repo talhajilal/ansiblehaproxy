@@ -1,0 +1,18 @@
+---
+# tasks file for haproxy
+- name: "install haproxy"
+  yum:
+    name: haproxy
+    state: present
+
+- name: "HA Proxy file"
+  template: 
+    src: files/haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+  register: file_change
+
+- name: "syntax check"
+  command: "haproxy -f /etc/haproxy/haproxy.cfg -c"
+  when: file_change is changed
+  register: syntax_check 
+  notify: restart proxy
