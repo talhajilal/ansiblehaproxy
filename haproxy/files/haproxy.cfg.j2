@@ -24,7 +24,7 @@ global
     #    local2.*                       /var/log/haproxy.log
     #
     log         127.0.0.1 local2
-
+    debug 4
     chroot      /var/lib/haproxy
     pidfile     /var/run/haproxy.pid
     maxconn     4000
@@ -59,36 +59,25 @@ defaults
 
 ### amjta.ca Website SSL Certifcate #########################
 frontend amjta.ca
-    bind *:80
-    bind *:443 ssl crt /etc/ssl/amjta.ca/amjta.ca.pem alpn h2.http/1.1
+    bind 0.0.0.0:80
+    bind 0.0.0.0:443 ssl crt /etc/ssl/amjta.ca/amjta.ca.pem alpn h2.http/1.1
     http-request redirect scheme https if { hdr(Host) -i amjta.ca } !{ ssl_fc }
     mode http
-    acl path-content          path_beg /content
-    acl path-content-login    path /content/wp-login.php
+    acl path-content          path_beg /wp-content
+    acl path-content-login    path wp-content/wp-login.php
     acl path-content-admin    path_beg /wp-admin
+    acl hsts_exists res.hdr_cnt(Strict-Transport-Security) gt 0
+    http-response add-header Strict-Transport-Security max-age=31536000;\ includeSubDomains if ! hsts_exists
+    timeout client 10s 
     use_backend amjtanodes if { hdr(host) -i amjta.ca }
+    use_backend amjtanodes if { hdr(host) -i www.amjta.ca }
+
 
 backend amjtanodes
     mode http
-    server web01 10.101.101.100:80 check
-    timeout connect 10s 
-    timeout server 10s 
+    server web01 10.101.101.100:80
+    timeout connect 20s 
+    timeout server 20s 
+    http-request add-header X-Forwarded-Proto https
+    http-response set-header Content-Security-Policy upgrade-insecure-requests
 ### amjta.ca Website SSL Certifcate #########################
-
-# Test vip
-frontend amjtest.ca
-    bind *:80
-    bind *:443 ssl crt /etc/ssl/amjtest.ca/amjtest.ca.pem alpn h2.http/1.1
-    http-request redirect scheme https if { hdr(Host) -i amjtest.ca } !{ ssl_fc }
-    mode http
-    acl path-content          path_beg /content
-    acl path-content-login    path /content/wp-login.php
-    acl path-content-admin    path_beg /wp-admin
-    use_backend amjtestnodes if { hdr(host) -i amjtest.ca }
-
-backend amjtestnodes
-    mode http
-    server amjtest_web01 10.101.101.98:80 
-    timeout connect 10s 
-    timeout server 10s 
-

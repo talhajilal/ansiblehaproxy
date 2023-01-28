@@ -5,3 +5,8 @@
     name: haproxy
     state: restarted
   when: syntax_check is succeeded
+
+- name: "restart rsyslog"
+  service: 
+    name: rsyslog 
+    state: restarted 

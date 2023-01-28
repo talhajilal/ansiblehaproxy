@@ -2,9 +2,22 @@
 # tasks file for haproxy
 - name: "install haproxy"
   yum:
-    name: haproxy
+    name: 
+      - haproxy
+      - rsyslog
     state: present
 
+- name: "haproxy service status"
+  service: 
+    state: started
+    name:  haproxy
+
+- name: "Copy haproxy rsyslog config" 
+  template: 
+    src: files/haproxy.conf
+    dest: /etc/rsyslog.d/haproxy.conf
+  notify: restart rsyslog
+     
 - name: "HA Proxy file"
   template: 
     src: files/haproxy.cfg.j2
